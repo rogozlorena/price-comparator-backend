@@ -10,6 +10,7 @@ import com.pricecomparator.pricecomparator.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.LocalDate;
 
@@ -20,6 +21,10 @@ public class CSVLoaderService {
     private final PriceRepository priceRepository;
 
     public void loadCSV(String fileName, String store, LocalDate date) {
+        InputStream is = getClass().getClassLoader().getResourceAsStream("sample_data/" + fileName);
+        if (is == null) {
+            throw new RuntimeException("File not found: " + fileName);
+        }
         try (CSVReader reader = new CSVReaderBuilder(
                 new InputStreamReader(getClass().getClassLoader().getResourceAsStream("sample_data/" + fileName)))
                 .withCSVParser(new CSVParserBuilder().withSeparator(';').build())
