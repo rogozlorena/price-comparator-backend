@@ -1,6 +1,7 @@
 package com.pricecomparator.pricecomparator.service;
 
 import com.pricecomparator.pricecomparator.dto.BestDiscountDto;
+import com.pricecomparator.pricecomparator.dto.PriceHistoryDto;
 import com.pricecomparator.pricecomparator.model.Discount;
 import com.pricecomparator.pricecomparator.repository.DiscountRepository;
 import lombok.RequiredArgsConstructor;
@@ -61,5 +62,13 @@ public class DiscountService {
                 ))
                 .collect(Collectors.toList());
     }
+
+    public List<PriceHistoryDto> getPriceHistory(String productId, String store, LocalDate start, LocalDate end) {
+        return discountRepository.findByProduct_ProductIdAndStoreAndStartDateBetween(productId, store, start, end)
+                .stream()
+                .map(d -> new PriceHistoryDto(d.getStartDate(), d.getNewPrice()))
+                .collect(Collectors.toList());
+    }
+
 
 }

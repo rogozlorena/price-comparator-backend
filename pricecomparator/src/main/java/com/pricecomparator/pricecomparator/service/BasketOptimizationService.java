@@ -20,7 +20,8 @@ public class BasketOptimizationService {
     public OptimizedBasketDto getBestStoreForBasket(BasketRequestDto basketRequestDto) {
         List<Product> products = basketRequestDto.getProductIds().stream()
                 .map(productRepository::findByProductId)
-                .filter(Objects::nonNull)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(Collectors.toList());
 
         // Map<store, List<Price>>

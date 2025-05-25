@@ -37,7 +37,7 @@ public class CSVLoaderService {
                 double priceValue = Double.parseDouble(line[6]);
                 String currency = line[7];
 
-                Product product = productRepository.findByProductId(productId);
+                Product product = productRepository.findByProductId(productId).orElse(null);
                 if (product == null) {
                     product = new Product(null, productId, name, category, brand, quantity, unit, currency);
                     productRepository.save(product);
