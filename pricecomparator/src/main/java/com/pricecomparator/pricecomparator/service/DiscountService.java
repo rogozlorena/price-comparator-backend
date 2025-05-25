@@ -3,7 +3,11 @@ package com.pricecomparator.pricecomparator.service;
 import com.pricecomparator.pricecomparator.dto.BestDiscountDto;
 import com.pricecomparator.pricecomparator.dto.PriceHistoryDto;
 import com.pricecomparator.pricecomparator.model.Discount;
+import com.pricecomparator.pricecomparator.model.Price;
+import com.pricecomparator.pricecomparator.model.Product;
 import com.pricecomparator.pricecomparator.repository.DiscountRepository;
+import com.pricecomparator.pricecomparator.repository.PriceRepository;
+import com.pricecomparator.pricecomparator.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,17 +21,19 @@ import java.util.stream.Collectors;
 public class DiscountService {
 
     private final DiscountRepository discountRepository;
+    private final ProductRepository productRepository;
+    private final PriceRepository priceRepository;
 
     public List<BestDiscountDto> getBestDiscounts(int limit) {
         LocalDate today = LocalDate.now();
 
-        // Obține toate discounturile active azi (start <= today && (end >= today OR end == null))
+
         List<Discount> activeDiscounts = discountRepository.findAll().stream()
                 .filter(d -> !d.getStartDate().isAfter(today)) // startDate <= today
                 .filter(d -> d.getEndDate() == null || !d.getEndDate().isBefore(today)) // endDate == null sau endDate >= today
                 .collect(Collectors.toList());
 
-        // Sortează după procentul de discount descrescător și limitează rezultatul
+
         return activeDiscounts.stream()
                 .sorted(Comparator.comparingDouble(Discount::getDiscountPercentage).reversed())
                 .limit(limit)
@@ -45,10 +51,10 @@ public class DiscountService {
         LocalDate today = LocalDate.now();
         LocalDate yesterday = today.minusDays(1);
 
-        // Obține discounturile începute în ultimele 24 ore (începând cu ieri)
+
         List<Discount> newDiscounts = discountRepository.findByStartDateAfter(yesterday);
 
-        // Sortează după data de start descrescător și limitează rezultatul
+
         return newDiscounts.stream()
                 .sorted(Comparator.comparing(Discount::getStartDate).reversed())
                 .limit(limit)
@@ -70,5 +76,37 @@ public class DiscountService {
                 .collect(Collectors.toList());
     }
 
+    public void generateDiscounts() {
+
+        discountRepository.deleteAll();
+
+
+        List<Product> products = productRepository.findAll();
+
+        for (Product product : products) {
+
+            List<Price> prices = priceRepository.findByProduct(product).stream()
+                    .sorted((p1, p2) -> p2.getDate().compareTo(p1.getDate()))
+                    .limit(2)
+                    .collect(Collectors.toList());
+
+            if (prices.size() < 2) continue;
+
+            Price latestPrice = prices.get(0);
+            Price previousPrice = prices.get(1);
+
+            if (latestPrice.getValue() < previousPrice.getValue()) {
+                Discount discount = new Discount();
+                discount.setProduct(product);
+                discount.setStore(latestPrice.getStore());
+                discount.setOldPrice(previousPrice.getValue());
+                discount.setNewPrice(latestPrice.getValue());
+                discount.setStartDate(latestPrice.getDate());
+                discount.setEndDate(null); // poti decide ce sa faci aici
+
+                discountRepository.save(discount);
+            }
+        }
+    }
 
 }

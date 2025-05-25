@@ -37,7 +37,10 @@ public class CSVLoaderService {
                 String name = line[1];
                 String category = line[2];
                 String brand = line[3];
-                double quantity = Double.parseDouble(line[4]);
+                String rawQuantity = line[4].trim().replace(",", ".");
+                String numberOnly = rawQuantity.replaceAll("[^0-9.]", "");
+                double quantity = numberOnly.isEmpty() ? 0.0 : Double.parseDouble(numberOnly);
+
                 String unit = line[5];
                 double priceValue = Double.parseDouble(line[6]);
                 String currency = line[7];
